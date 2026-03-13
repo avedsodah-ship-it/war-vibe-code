@@ -11,43 +11,66 @@
 </head>
 <body>
   <div class="app">
-    <header class="header">
-      <h1>War</h1>
-      <div class="counts">
-        <span class="count" data-player="computer"><strong>Computer</strong> <em id="computer-count">26</em></span>
-        <span class="count" data-player="player"><strong>You</strong> <em id="player-count">26</em></span>
+    <!-- Home screen -->
+    <section class="home-screen" id="home-screen">
+      <h1 class="home-title">War</h1>
+      <p class="home-subtitle">Choose your game</p>
+      <div class="home-options">
+        <button type="button" class="btn btn-home" id="one-player-btn">One Player</button>
+        <button type="button" class="btn btn-home" id="two-player-btn">Two Player</button>
       </div>
-    </header>
+      <p class="home-hint">One player: vs computer. Two player: <kbd>A</kbd> and <kbd>L</kbd> to play.</p>
+    </section>
 
-    <main class="table">
-      <div class="computer-side">
-        <div class="hand-pile" id="computer-pile" aria-label="Computer's cards"></div>
-        <div class="battle-slot" id="computer-slot">
-          <div class="card back" id="computer-card"></div>
+    <!-- Game screen (hidden until game starts) -->
+    <section class="game-screen hidden" id="game-screen">
+      <header class="header">
+        <h1>War</h1>
+        <div class="counts">
+          <span class="count" data-player="top"><strong id="top-label">Computer</strong> <em id="top-count">26</em></span>
+          <span class="count" data-player="bottom"><strong id="bottom-label">You</strong> <em id="bottom-count">26</em></span>
         </div>
-      </div>
+      </header>
 
-      <div class="battle-zone">
-        <p class="message" id="message">Click Battle to play a round.</p>
-        <button type="button" class="btn" id="battle-btn">Battle</button>
-      </div>
-
-      <div class="player-side">
-        <div class="battle-slot" id="player-slot">
-          <div class="card back" id="player-card"></div>
+      <main class="table">
+        <div class="top-side">
+          <div class="hand-pile" id="top-pile" aria-label="Top player's cards"></div>
+          <div class="battle-slot" id="top-slot">
+            <div class="card back" id="top-card"></div>
+          </div>
+          <div class="war-face-down" id="top-war-cards"></div>
         </div>
-        <div class="hand-pile" id="player-pile" aria-label="Your cards"></div>
+
+        <div class="battle-zone">
+          <p class="message" id="message">Click Battle to play a round.</p>
+          <button type="button" class="btn" id="battle-btn">Battle</button>
+          <p class="key-hint hidden" id="key-hint">Player 1: <kbd>A</kbd> — Player 2: <kbd>L</kbd></p>
+          <p class="war-reveal-hint hidden" id="war-reveal-hint"></p>
+        </div>
+
+        <div class="bottom-side">
+          <div class="war-face-down" id="bottom-war-cards"></div>
+          <div class="battle-slot" id="bottom-slot">
+            <div class="card back" id="bottom-card"></div>
+          </div>
+          <div class="hand-pile" id="bottom-pile" aria-label="Bottom player's cards"></div>
+        </div>
+      </main>
+
+      <div class="war-overlay hidden" id="war-overlay">
+        <p class="war-text">War!</p>
       </div>
-    </main>
 
-    <div class="war-overlay hidden" id="war-overlay">
-      <p class="war-text">War!</p>
-    </div>
+      <div class="war-reveal-overlay hidden" id="war-reveal-overlay">
+        <p class="war-reveal-text" id="war-reveal-text">Reveal the war cards</p>
+        <button type="button" class="btn" id="war-reveal-btn">Reveal</button>
+      </div>
 
-    <div class="result-overlay hidden" id="result-overlay">
-      <h2 id="result-title"></h2>
-      <button type="button" class="btn" id="play-again-btn">Play again</button>
-    </div>
+      <div class="result-overlay hidden" id="result-overlay">
+        <h2 id="result-title"></h2>
+        <button type="button" class="btn" id="play-again-btn">Play again</button>
+      </div>
+    </section>
   </div>
   <script src="game.js"></script>
 </body>
