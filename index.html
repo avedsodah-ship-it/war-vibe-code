@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>War</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1>War</h1>
+      <div class="counts">
+        <span class="count" data-player="computer"><strong>Computer</strong> <em id="computer-count">26</em></span>
+        <span class="count" data-player="player"><strong>You</strong> <em id="player-count">26</em></span>
+      </div>
+    </header>
+
+    <main class="table">
+      <div class="computer-side">
+        <div class="hand-pile" id="computer-pile" aria-label="Computer's cards"></div>
+        <div class="battle-slot" id="computer-slot">
+          <div class="card back" id="computer-card"></div>
+        </div>
+      </div>
+
+      <div class="battle-zone">
+        <p class="message" id="message">Click Battle to play a round.</p>
+        <button type="button" class="btn" id="battle-btn">Battle</button>
+      </div>
+
+      <div class="player-side">
+        <div class="battle-slot" id="player-slot">
+          <div class="card back" id="player-card"></div>
+        </div>
+        <div class="hand-pile" id="player-pile" aria-label="Your cards"></div>
+      </div>
+    </main>
+
+    <div class="war-overlay hidden" id="war-overlay">
+      <p class="war-text">War!</p>
+    </div>
+
+    <div class="result-overlay hidden" id="result-overlay">
+      <h2 id="result-title"></h2>
+      <button type="button" class="btn" id="play-again-btn">Play again</button>
+    </div>
+  </div>
+  <script src="game.js"></script>
+</body>
+</html>
