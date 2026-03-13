@@ -7,6 +7,8 @@
   const RED_SUITS = ['♥', '♦'];
   const REVEAL_ANIMATION_MS = 450;
   const REVEAL_FLIP_HALF = 225;
+  const POST_REVEAL_DELAY_MS = 900;
+  const CARD_FLY_MS = 650;
 
   function buildDeck() {
     const deck = [];
@@ -196,29 +198,40 @@
     }
   }
 
-  function finishRound(winnerHand, loserHand, wonCards, message) {
-    giveCardsTo(winnerHand, wonCards);
+  function finishRoundWithFly(winnerIsTop, wonCards, message) {
     setMessage(message);
-    updateCounts();
-    checkGameOver();
-    clearSlots();
-    if (gameMode === 'two') {
-      setMessage('Player 1: press A — Player 2: press L');
-    } else {
-      setMessage('Click Battle to play a round.');
-    }
+    topCardEl.classList.remove('revealed');
+    bottomCardEl.classList.remove('revealed');
+    topCardEl.classList.add(winnerIsTop ? 'fly-to-top' : 'fly-to-bottom');
+    bottomCardEl.classList.add(winnerIsTop ? 'fly-to-top' : 'fly-to-bottom');
+    const winnerHand = winnerIsTop ? topHand : bottomHand;
+    setTimeout(() => {
+      giveCardsTo(winnerHand, wonCards);
+      clearSlots();
+      topCardEl.classList.remove('fly-to-top', 'fly-to-bottom');
+      bottomCardEl.classList.remove('fly-to-top', 'fly-to-bottom');
+      updateCounts();
+      checkGameOver();
+      if (gameMode === 'two') {
+        setMessage('Player 1: press A — Player 2: press L');
+      } else {
+        setMessage('Click Battle to play a round.');
+      }
+    }, CARD_FLY_MS);
   }
 
   function doBattleRevealAndResolve() {
-    if (currentTopCard.rank > currentBottomCard.rank) {
-      finishRound(topHand, bottomHand, [currentTopCard, currentBottomCard],
-        gameMode === 'one' ? 'Computer takes the round.' : 'Player 1 takes the round.');
-    } else if (currentBottomCard.rank > currentTopCard.rank) {
-      finishRound(bottomHand, topHand, [currentTopCard, currentBottomCard],
-        gameMode === 'one' ? 'You take the round.' : 'Player 2 takes the round.');
-    } else {
-      startWar();
-    }
+    setTimeout(() => {
+      if (currentTopCard.rank > currentBottomCard.rank) {
+        finishRoundWithFly(true, [currentTopCard, currentBottomCard],
+          gameMode === 'one' ? 'Computer takes the round.' : 'Player 1 takes the round.');
+      } else if (currentBottomCard.rank > currentTopCard.rank) {
+        finishRoundWithFly(false, [currentTopCard, currentBottomCard],
+          gameMode === 'one' ? 'You take the round.' : 'Player 2 takes the round.');
+      } else {
+        startWar();
+      }
+    }, POST_REVEAL_DELAY_MS);
   }
 
   function startWar() {
@@ -258,15 +271,21 @@
     setCardBack(topCardEl);
     setCardBack(bottomCardEl);
     warPhase = 'reveal';
+    topRevealed = false;
+    bottomRevealed = false;
     if (gameMode === 'one') {
       setMessage('Click Battle to reveal the war cards.');
       battleBtn.disabled = false;
       warRevealText.textContent = 'Click Battle to reveal';
+      warRevealBtn.classList.remove('hidden');
       warRevealOverlay.classList.remove('hidden');
     } else {
       setMessage('Player 1: A to reveal — Player 2: L to reveal');
       warRevealHint.textContent = 'Player 1: press A — Player 2: press L';
       warRevealHint.classList.remove('hidden');
+      warRevealText.textContent = 'Player 1: press A — Player 2: press L to reveal';
+      warRevealBtn.classList.add('hidden');
+      warRevealOverlay.classList.remove('hidden');
       awaitingKeyReveal = true;
     }
   }
@@ -302,44 +321,53 @@
   }
 
   function resolveWarAfterReveal() {
-    if (warTopCard.rank > warBottomCard.rank) {
-      giveCardsTo(topHand, warPot);
-      setMessage(gameMode === 'one' ? 'Computer wins the war.' : 'Player 1 wins the war!');
-    } else if (warBottomCard.rank > warTopCard.rank) {
-      giveCardsTo(bottomHand, warPot);
-      setMessage(gameMode === 'one' ? 'You win the war!' : 'Player 2 wins the war!');
-    } else {
-      warPot = [];
-      setMessage('Another war!');
-      warOverlay.classList.remove('hidden');
+    const topWins = warTopCard.rank > warBottomCard.rank;
+    const bottomWins = warBottomCard.rank > warTopCard.rank;
+    if (topWins || bottomWins) {
+      setMessage(gameMode === 'one'
+        ? (topWins ? 'Computer wins the war.' : 'You win the war!')
+        : (topWins ? 'Player 1 wins the war!' : 'Player 2 wins the war!'));
+      topCardEl.classList.remove('revealed');
+      bottomCardEl.classList.remove('revealed');
+      topCardEl.classList.add(topWins ? 'fly-to-top' : 'fly-to-bottom');
+      bottomCardEl.classList.add(topWins ? 'fly-to-top' : 'fly-to-bottom');
+      const winnerHand = topWins ? topHand : bottomHand;
       setTimeout(() => {
-        warOverlay.classList.add('hidden');
-        warPhase = 'face-down';
-        runWarFaceDown();
-      }, 700);
+        giveCardsTo(winnerHand, warPot);
+        warPot = [];
+        isInWar = false;
+        warPhase = null;
+        warTopCard = null;
+        warBottomCard = null;
+        clearSlots();
+        topCardEl.classList.remove('fly-to-top', 'fly-to-bottom');
+        bottomCardEl.classList.remove('fly-to-top', 'fly-to-bottom');
+        clearWarFaceDown();
+        updateCounts();
+        warRevealOverlay.classList.add('hidden');
+        warRevealHint.classList.add('hidden');
+        awaitingKeyReveal = false;
+        if (gameMode === 'one') battleBtn.disabled = false;
+        checkGameOver();
+        if (gameMode === 'two') setMessage('Player 1: press A — Player 2: press L');
+      }, CARD_FLY_MS);
       return;
     }
     warPot = [];
-    isInWar = false;
-    warPhase = null;
-    warTopCard = null;
-    warBottomCard = null;
-    clearSlots();
-    clearWarFaceDown();
-    updateCounts();
-    warRevealOverlay.classList.add('hidden');
-    warRevealHint.classList.add('hidden');
-    awaitingKeyReveal = false;
-    if (gameMode === 'one') battleBtn.disabled = false;
-    checkGameOver();
-    if (gameMode === 'two') setMessage('Player 1: press A — Player 2: press L');
+    setMessage('Another war!');
+    warOverlay.classList.remove('hidden');
+    setTimeout(() => {
+      warOverlay.classList.add('hidden');
+      warPhase = 'face-down';
+      runWarFaceDown();
+    }, 700);
   }
 
   function doWarRevealOnePlayer() {
     warRevealOverlay.classList.add('hidden');
     animateRevealCard(topCardEl, warTopCard, () => {});
     animateRevealCard(bottomCardEl, warBottomCard, () => {
-      setTimeout(resolveWarAfterReveal, 200);
+      setTimeout(resolveWarAfterReveal, POST_REVEAL_DELAY_MS);
     });
   }
 
@@ -355,7 +383,8 @@
     if (topRevealed && bottomRevealed) {
       awaitingKeyReveal = false;
       warRevealHint.classList.add('hidden');
-      setTimeout(resolveWarAfterReveal, 300);
+      warRevealOverlay.classList.add('hidden');
+      setTimeout(resolveWarAfterReveal, POST_REVEAL_DELAY_MS);
     }
   }
 

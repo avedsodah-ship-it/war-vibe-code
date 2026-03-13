@@ -159,7 +159,7 @@ body {
   width: 28px;
   height: 38px;
   border-radius: 4px;
-  background: linear-gradient(145deg, #2a2a2a 0%, #1a1a1a 100%);
+  background: #1a2a4a url('card-back.png') center / cover no-repeat;
   border: 1px solid var(--border);
   opacity: 0;
   animation: warCardIn 0.35s ease forwards;
@@ -212,10 +212,10 @@ body {
 }
 
 .card.back {
-  background: linear-gradient(145deg, #2a2a2a 0%, #1a1a1a 100%);
-  color: var(--muted);
-  font-size: 0.65rem;
-  letter-spacing: 0.05em;
+  background: #1a2a4a url('card-back.png') center / cover no-repeat;
+  color: transparent;
+  font-size: 0;
+  text-indent: -999px;
 }
 
 .card.red {
@@ -242,6 +242,31 @@ body {
 .card.revealed {
   transform: scale(1.02);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* Cards fly to winner's pile */
+.card.fly-to-top {
+  animation: cardFlyToTop 0.65s ease-in forwards;
+  pointer-events: none;
+}
+
+.card.fly-to-bottom {
+  animation: cardFlyToBottom 0.65s ease-in forwards;
+  pointer-events: none;
+}
+
+@keyframes cardFlyToTop {
+  to {
+    transform: translateY(-140px) translateX(-30px) scale(0.5);
+    opacity: 0;
+  }
+}
+
+@keyframes cardFlyToBottom {
+  to {
+    transform: translateY(140px) translateX(30px) scale(0.5);
+    opacity: 0;
+  }
 }
 
 .hand-pile {
