@@ -71,6 +71,10 @@
   let warTopCard = null;
   let warBottomCard = null;
   let awaitingKeyReveal = false;
+  let roundId = 0;
+  let resolveDelayTimeoutId = null;
+  let flyTimeoutId = null;
+  let warFlyTimeoutId = null;
 
   function showHome() {
     homeScreen.classList.remove('hidden');
@@ -111,7 +115,8 @@
     el.className = 'card face-up' + (card.isRed ? ' red' : '');
   }
 
-  function animateRevealCard(el, card, onDone) {
+  function animateRevealCard(el, card, onDone, forRoundId) {
+    const id = forRoundId != null ? forRoundId : roundId;
     el.classList.add('revealing');
     setTimeout(() => {
       setCardFace(el, card);
@@ -120,7 +125,7 @@
     setTimeout(() => {
       el.classList.remove('revealing');
       el.classList.add('revealed');
-      if (onDone) onDone();
+      if (onDone && id === roundId) onDone();
     }, REVEAL_ANIMATION_MS);
   }
 
@@ -198,6 +203,21 @@
     }
   }
 
+  function cancelRoundTimeouts() {
+    if (resolveDelayTimeoutId != null) {
+      clearTimeout(resolveDelayTimeoutId);
+      resolveDelayTimeoutId = null;
+    }
+    if (flyTimeoutId != null) {
+      clearTimeout(flyTimeoutId);
+      flyTimeoutId = null;
+    }
+    if (warFlyTimeoutId != null) {
+      clearTimeout(warFlyTimeoutId);
+      warFlyTimeoutId = null;
+    }
+  }
+
   function finishRoundWithFly(winnerIsTop, wonCards, message) {
     setMessage(message);
     topCardEl.classList.remove('revealed');
@@ -205,7 +225,8 @@
     topCardEl.classList.add(winnerIsTop ? 'fly-to-top' : 'fly-to-bottom');
     bottomCardEl.classList.add(winnerIsTop ? 'fly-to-top' : 'fly-to-bottom');
     const winnerHand = winnerIsTop ? topHand : bottomHand;
-    setTimeout(() => {
+    flyTimeoutId = setTimeout(() => {
+      flyTimeoutId = null;
       giveCardsTo(winnerHand, wonCards);
       clearSlots();
       topCardEl.classList.remove('fly-to-top', 'fly-to-bottom');
@@ -221,7 +242,8 @@
   }
 
   function doBattleRevealAndResolve() {
-    setTimeout(() => {
+    resolveDelayTimeoutId = setTimeout(() => {
+      resolveDelayTimeoutId = null;
       if (currentTopCard.rank > currentBottomCard.rank) {
         finishRoundWithFly(true, [currentTopCard, currentBottomCard],
           gameMode === 'one' ? 'Computer takes the round.' : 'Player 1 takes the round.');
@@ -232,6 +254,47 @@
         startWar();
       }
     }, POST_REVEAL_DELAY_MS);
+  }
+
+  function instantResolveAndStartNextRound() {
+    cancelRoundTimeouts();
+    roundId++;
+    setCardFace(topCardEl, currentTopCard);
+    topCardEl.classList.remove('back', 'revealing');
+    topCardEl.classList.add('revealed');
+    setCardFace(bottomCardEl, currentBottomCard);
+    bottomCardEl.classList.remove('back', 'revealing');
+    bottomCardEl.classList.add('revealed');
+    const topWins = currentTopCard.rank > currentBottomCard.rank;
+    const bottomWins = currentBottomCard.rank > currentTopCard.rank;
+    const wonCards = [currentTopCard, currentBottomCard];
+    if (topWins) {
+      giveCardsTo(topHand, wonCards);
+      setMessage(gameMode === 'one' ? 'Computer takes the round.' : 'Player 1 takes the round.');
+    } else if (bottomWins) {
+      giveCardsTo(bottomHand, wonCards);
+      setMessage(gameMode === 'one' ? 'You take the round.' : 'Player 2 takes the round.');
+    } else {
+      startWar();
+      return;
+    }
+    clearSlots();
+    topCardEl.classList.remove('fly-to-top', 'fly-to-bottom');
+    bottomCardEl.classList.remove('fly-to-top', 'fly-to-bottom');
+    updateCounts();
+    checkGameOver();
+    if (topHand.length === 0 || bottomHand.length === 0) return;
+    setMessage('...');
+    currentTopCard = topHand.shift();
+    currentBottomCard = bottomHand.shift();
+    setCardBack(topCardEl);
+    setCardBack(bottomCardEl);
+    updateCounts();
+    animateRevealCard(topCardEl, currentTopCard, () => {
+      animateRevealCard(bottomCardEl, currentBottomCard, () => {
+        doBattleRevealAndResolve();
+      }, roundId);
+    }, roundId);
   }
 
   function startWar() {
@@ -332,7 +395,8 @@
       topCardEl.classList.add(topWins ? 'fly-to-top' : 'fly-to-bottom');
       bottomCardEl.classList.add(topWins ? 'fly-to-top' : 'fly-to-bottom');
       const winnerHand = topWins ? topHand : bottomHand;
-      setTimeout(() => {
+      warFlyTimeoutId = setTimeout(() => {
+        warFlyTimeoutId = null;
         giveCardsTo(winnerHand, warPot);
         warPot = [];
         isInWar = false;
@@ -399,19 +463,22 @@
       checkGameOver();
       return;
     }
+    if (gameMode === 'one' && currentTopCard && currentBottomCard) {
+      instantResolveAndStartNextRound();
+      return;
+    }
+    roundId++;
     currentTopCard = topHand.shift();
     currentBottomCard = bottomHand.shift();
     setCardBack(topCardEl);
     setCardBack(bottomCardEl);
-    battleBtn.disabled = true;
     setMessage('...');
     updateCounts();
     animateRevealCard(topCardEl, currentTopCard, () => {
       animateRevealCard(bottomCardEl, currentBottomCard, () => {
         doBattleRevealAndResolve();
-        battleBtn.disabled = false;
-      });
-    });
+      }, roundId);
+    }, roundId);
   }
 
   // ----- 2-player: A/L to reveal; first keypress draws both and reveals that side, second reveals the other
